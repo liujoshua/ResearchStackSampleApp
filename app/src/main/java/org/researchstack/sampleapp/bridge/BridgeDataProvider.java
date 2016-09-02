@@ -3,6 +3,7 @@ package org.researchstack.sampleapp.bridge;
 import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.widget.Toast;
@@ -75,15 +76,14 @@ import rx.schedulers.Schedulers;
 * This is a very simple implementation that hits only part of the Sage Bridge REST API
 * a complete port of the Sage Bridge Java SDK for android: https://github.com/Sage-Bionetworks/BridgeJavaSDK
  */
-public abstract class BridgeDataProvider extends DataProvider
-{
+public abstract class BridgeDataProvider extends DataProvider {
     public static final String TEMP_CONSENT_JSON_FILE_NAME = "/consent_sig";
-    public static final String USER_SESSION_PATH           = "/user_session";
-    public static final String USER_PATH                   = "/user";
+    public static final String USER_SESSION_PATH = "/user_session";
+    public static final String USER_PATH = "/user";
 
-    private   BridgeService   service;
+    private BridgeService service;
     protected UserSessionInfo userSessionInfo;
-    protected Gson    gson     = new Gson();
+    protected Gson gson = new Gson();
     protected boolean signedIn = false;
 
     // these are used to get task/step guids without rereading the json files and iterating through
@@ -101,20 +101,15 @@ public abstract class BridgeDataProvider extends DataProvider
 
     protected abstract String getUserAgent();
 
-    public BridgeDataProvider()
-    {
+    public BridgeDataProvider() {
         buildRetrofitService(null);
     }
 
-    private void buildRetrofitService(UserSessionInfo userSessionInfo)
-    {
+    private void buildRetrofitService(UserSessionInfo userSessionInfo) {
         final String sessionToken;
-        if(userSessionInfo != null)
-        {
+        if (userSessionInfo != null) {
             sessionToken = userSessionInfo.getSessionToken();
-        }
-        else
-        {
+        } else {
             sessionToken = "";
         }
 
@@ -132,8 +127,7 @@ public abstract class BridgeDataProvider extends DataProvider
 
         OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder().addInterceptor(headerInterceptor);
 
-        if (BuildConfig.DEBUG)
-        {
+        if (BuildConfig.DEBUG) {
             HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor(message -> LogExt.i(
                     getClass(),
                     message));
@@ -152,8 +146,7 @@ public abstract class BridgeDataProvider extends DataProvider
     }
 
     @Override
-    public Observable<DataResponse> initialize(Context context)
-    {
+    public Observable<DataResponse> initialize(Context context) {
         return Observable.defer(() -> {
             userSessionInfo = loadUserSession(context);
             signedIn = userSessionInfo != null;
@@ -163,28 +156,22 @@ public abstract class BridgeDataProvider extends DataProvider
 
         }).doOnNext(response -> {
             // will crash if the user hasn't created a pincode yet, need to fix needsAuth()
-            if(StorageAccess.getInstance().hasPinCode(context))
-            {
+            if (StorageAccess.getInstance().hasPinCode(context)) {
                 checkForTempConsentAndUpload(context);
                 uploadPendingFiles(context);
             }
         });
     }
 
-    private void checkForTempConsentAndUpload(Context context)
-    {
+    private void checkForTempConsentAndUpload(Context context) {
         // If we are signed in, not consented on the server, but consented locally, upload consent
-        if(isSignedIn(context) && ! userSessionInfo.isConsented() && StorageAccess.getInstance()
+        if (isSignedIn(context) && !userSessionInfo.isConsented() && StorageAccess.getInstance()
                 .getFileAccess()
-                .dataExists(context, TEMP_CONSENT_JSON_FILE_NAME))
-        {
-            try
-            {
+                .dataExists(context, TEMP_CONSENT_JSON_FILE_NAME)) {
+            try {
                 ConsentSignatureBody consent = loadConsentSignatureBody(context);
                 uploadConsent(context, consent);
-            }
-            catch(Exception e)
-            {
+            } catch (Exception e) {
                 throw new RuntimeException("Error loading consent", e);
             }
         }
@@ -195,27 +182,22 @@ public abstract class BridgeDataProvider extends DataProvider
      * @return true if we are consented
      */
     @Override
-    public boolean isConsented(Context context)
-    {
+    public boolean isConsented(Context context) {
         return userSessionInfo.isConsented() || StorageAccess.getInstance()
                 .getFileAccess()
                 .dataExists(context, TEMP_CONSENT_JSON_FILE_NAME);
     }
 
     @Override
-    public Observable<DataResponse> withdrawConsent(Context context, String reason)
-    {
+    public Observable<DataResponse> withdrawConsent(Context context, String reason) {
         return service.withdrawConsent(getStudyId(), new WithdrawalBody(reason))
                 .compose(ObservableUtils.applyDefault())
                 .doOnNext(response -> {
-                    if(response.isSuccess())
-                    {
+                    if (response.isSuccess()) {
                         userSessionInfo.setConsented(false);
                         saveUserSession(context, userSessionInfo);
                         buildRetrofitService(userSessionInfo);
-                    }
-                    else
-                    {
+                    } else {
                         handleError(context, response.code());
                     }
                 })
@@ -223,16 +205,14 @@ public abstract class BridgeDataProvider extends DataProvider
     }
 
     @Override
-    public Observable<DataResponse> signUp(Context context, String email, String username, String password)
-    {
+    public Observable<DataResponse> signUp(Context context, String email, String username, String password) {
         // we should pass in data groups, remove roles
         SignUpBody body = new SignUpBody(getStudyId(), email, username, password, null, null);
 
         // saving email to user object should exist elsewhere.
         // Save email to user object.
         User user = loadUser(context);
-        if(user == null)
-        {
+        if (user == null) {
             user = new User();
         }
         user.setEmail(email);
@@ -247,33 +227,25 @@ public abstract class BridgeDataProvider extends DataProvider
 
 
     @Override
-    public Observable<DataResponse> signIn(Context context, String username, String password)
-    {
+    public Observable<DataResponse> signIn(Context context, String username, String password) {
         SignInBody body = new SignInBody(getStudyId(), username, password);
 
         // response 412 still has a response body, so catch all http errors here
         return service.signIn(body).doOnNext(response -> {
 
-            if(response.code() == 200)
-            {
+            if (response.code() == 200) {
                 userSessionInfo = response.body();
-            }
-            else if(response.code() == 412)
-            {
-                try
-                {
+            } else if (response.code() == 412) {
+                try {
                     String errorBody = response.errorBody().string();
                     userSessionInfo = gson.fromJson(errorBody, UserSessionInfo.class);
-                }
-                catch(IOException e)
-                {
+                } catch (IOException e) {
                     throw new RuntimeException("Error deserializing server sign in response");
                 }
 
             }
 
-            if(userSessionInfo != null)
-            {
+            if (userSessionInfo != null) {
                 // if we are direct from signing in, we need to load the user profile object
                 // from the server. that wouldn't work right now
                 signedIn = true;
@@ -289,40 +261,34 @@ public abstract class BridgeDataProvider extends DataProvider
     }
 
     @Override
-    public Observable<DataResponse> signOut(Context context)
-    {
+    public Observable<DataResponse> signOut(Context context) {
         return service.signOut().map(response -> new DataResponse(response.isSuccess(), null));
     }
 
     @Override
-    public Observable<DataResponse> resendEmailVerification(Context context, String email)
-    {
+    public Observable<DataResponse> resendEmailVerification(Context context, String email) {
         EmailBody body = new EmailBody(getStudyId(), email);
         return service.resendEmailVerification(body);
     }
 
     @Override
-    public boolean isSignedUp(Context context)
-    {
+    public boolean isSignedUp(Context context) {
         User user = loadUser(context);
         return user != null && user.getEmail() != null;
     }
 
     @Override
-    public boolean isSignedIn(Context context)
-    {
+    public boolean isSignedIn(Context context) {
         return signedIn;
     }
 
     @Override
-    public void saveConsent(Context context, TaskResult consentResult)
-    {
+    public void saveConsent(Context context, TaskResult consentResult) {
         ConsentSignatureBody signature = createConsentSignatureBody(consentResult);
         writeJsonString(context, gson.toJson(signature), TEMP_CONSENT_JSON_FILE_NAME);
 
         User user = loadUser(context);
-        if(user == null)
-        {
+        if (user == null) {
             user = new User();
         }
         user.setName(signature.name);
@@ -331,8 +297,7 @@ public abstract class BridgeDataProvider extends DataProvider
     }
 
     @NonNull
-    protected ConsentSignatureBody createConsentSignatureBody(TaskResult consentResult)
-    {
+    protected ConsentSignatureBody createConsentSignatureBody(TaskResult consentResult) {
         StepResult<StepResult> formResult = (StepResult<StepResult>) consentResult.getStepResult(
                 ConsentTask.ID_FORM);
 
@@ -362,31 +327,25 @@ public abstract class BridgeDataProvider extends DataProvider
     }
 
     @Override
-    public User getUser(Context context)
-    {
+    public User getUser(Context context) {
         return loadUser(context);
     }
 
     @Override
-    public String getUserSharingScope(Context context)
-    {
+    public String getUserSharingScope(Context context) {
         return userSessionInfo.getSharingScope();
     }
 
     @Override
-    public void setUserSharingScope(Context context, String scope)
-    {
+    public void setUserSharingScope(Context context, String scope) {
         // Update scope on server
         service.dataSharing(new SharingOptionBody(scope))
                 .compose(ObservableUtils.applyDefault())
                 .doOnNext(response -> {
-                    if(response.isSuccess())
-                    {
+                    if (response.isSuccess()) {
                         userSessionInfo.setSharingScope(scope);
                         saveUserSession(context, userSessionInfo);
-                    }
-                    else
-                    {
+                    } else {
                         handleError(context, response.code());
                     }
                 })
@@ -397,24 +356,21 @@ public abstract class BridgeDataProvider extends DataProvider
                 });
     }
 
-    private ConsentSignatureBody loadConsentSignatureBody(Context context)
-    {
+    private ConsentSignatureBody loadConsentSignatureBody(Context context) {
         String consentJson = loadJsonString(context, TEMP_CONSENT_JSON_FILE_NAME);
         return gson.fromJson(consentJson, ConsentSignatureBody.class);
     }
 
     @Override
-    public void uploadConsent(Context context, TaskResult consentResult)
-    {
+    public void uploadConsent(Context context, TaskResult consentResult) {
         uploadConsent(context, createConsentSignatureBody(consentResult));
     }
 
-    private void uploadConsent(Context context, ConsentSignatureBody consent)
-    {
+    private void uploadConsent(Context context, ConsentSignatureBody consent) {
         service.consentSignature(getStudyId(), consent)
                 .compose(ObservableUtils.applyDefault())
                 .subscribe(response -> {
-                    if(response.code() == 201 ||
+                    if (response.code() == 201 ||
                             response.code() == 409) // success or already consented
                     {
                         userSessionInfo.setConsented(true);
@@ -424,13 +380,10 @@ public abstract class BridgeDataProvider extends DataProvider
                                 response.message());
 
                         FileAccess fileAccess = StorageAccess.getInstance().getFileAccess();
-                        if(fileAccess.dataExists(context, TEMP_CONSENT_JSON_FILE_NAME))
-                        {
+                        if (fileAccess.dataExists(context, TEMP_CONSENT_JSON_FILE_NAME)) {
                             fileAccess.clearData(context, TEMP_CONSENT_JSON_FILE_NAME);
                         }
-                    }
-                    else
-                    {
+                    } else {
                         throw new RuntimeException(
                                 "Error uploading consent, code: " + response.code() + " message: " +
                                         response.message());
@@ -439,88 +392,68 @@ public abstract class BridgeDataProvider extends DataProvider
     }
 
     @Override
-    public String getUserEmail(Context context)
-    {
+    public String getUserEmail(Context context) {
         User user = loadUser(context);
         return user == null ? null : user.getEmail();
     }
 
     @Override
-    public Observable<DataResponse> forgotPassword(Context context, String email)
-    {
+    public Observable<DataResponse> forgotPassword(Context context, String email) {
         return service.requestResetPassword(new EmailBody(getStudyId(), email)).map(response -> {
-            if(response.isSuccess())
-            {
+            if (response.isSuccess()) {
                 return new DataResponse(true, response.body().getMessage());
-            }
-            else
-            {
+            } else {
                 return new DataResponse(false, response.message());
             }
         });
     }
 
-    private void saveUserSession(Context context, UserSessionInfo userInfo)
-    {
+    private void saveUserSession(Context context, UserSessionInfo userInfo) {
         String userSessionJson = gson.toJson(userInfo);
         writeJsonString(context, userSessionJson, USER_SESSION_PATH);
     }
 
-    private User loadUser(Context context)
-    {
-        try
-        {
+    private User loadUser(Context context) {
+        try {
             String user = loadJsonString(context, USER_PATH);
             return gson.fromJson(user, User.class);
-        }
-        catch(StorageAccessException e)
-        {
+        } catch (StorageAccessException e) {
             return null;
         }
     }
 
-    private void saveUser(Context context, User profile)
-    {
+    private void saveUser(Context context, User profile) {
         writeJsonString(context, gson.toJson(profile), USER_PATH);
     }
 
-    private void writeJsonString(Context context, String userSessionJson, String userSessionPath)
-    {
+    private void writeJsonString(Context context, String userSessionJson, String userSessionPath) {
         StorageAccess.getInstance()
                 .getFileAccess()
                 .writeData(context, userSessionPath, userSessionJson.getBytes());
     }
 
-    private UserSessionInfo loadUserSession(Context context)
-    {
-        try
-        {
+    private UserSessionInfo loadUserSession(Context context) {
+        try {
             String userSessionJson = loadJsonString(context, USER_SESSION_PATH);
             return gson.fromJson(userSessionJson, UserSessionInfo.class);
-        }
-        catch(StorageAccessException e)
-        {
+        } catch (StorageAccessException e) {
             return null;
         }
     }
 
-    private String loadJsonString(Context context, String path)
-    {
+    private String loadJsonString(Context context, String path) {
         return new String(StorageAccess.getInstance().getFileAccess().readData(context, path));
     }
 
     @Override
-    public SchedulesAndTasksModel loadTasksAndSchedules(Context context)
-    {
+    public SchedulesAndTasksModel loadTasksAndSchedules(Context context) {
         SchedulesAndTasksModel schedulesAndTasksModel = getTasksAndSchedules().create(context);
 
         AppDatabase db = StorageAccess.getInstance().getAppDatabase();
 
         List<SchedulesAndTasksModel.ScheduleModel> schedules = new ArrayList<>();
-        for(SchedulesAndTasksModel.ScheduleModel schedule : schedulesAndTasksModel.schedules)
-        {
-            if(schedule.tasks.size() == 0)
-            {
+        for (SchedulesAndTasksModel.ScheduleModel schedule : schedulesAndTasksModel.schedules) {
+            if (schedule.tasks.size() == 0) {
                 LogExt.e(getClass(), "No tasks in schedule");
                 continue;
             }
@@ -528,31 +461,20 @@ public abstract class BridgeDataProvider extends DataProvider
             // only supporting one task per schedule for now
             SchedulesAndTasksModel.TaskScheduleModel task = schedule.tasks.get(0);
 
-            if(task.taskFileName == null)
-            {
-                LogExt.e(getClass(), "No filename found for task with id: " + task.taskID);
-                continue;
-            }
+            String taskResultId = getTaskResultId(context, task);
 
-            // loading the task json here is bad, but the taskID is in the schedule
-            // json but the readable id is in the task json
-            TaskModel taskModel = loadTaskModel(context, task);
-            TaskResult result = db.loadLatestTaskResult(taskModel.identifier);
+            if (taskResultId != null) {
+                // cache cron string for later lookup
+                loadedTaskCrons.put(taskResultId, schedule.scheduleString);
 
-            // cache cron string for later lookup
-            loadedTaskCrons.put(taskModel.identifier, schedule.scheduleString);
-
-            if(result == null)
-            {
-                schedules.add(schedule);
-            }
-            else if(StringUtils.isNotEmpty(schedule.scheduleString))
-            {
-                Date date = ScheduleHelper.nextSchedule(schedule.scheduleString,
-                        result.getEndDate());
-                if(date.before(new Date()))
-                {
+                TaskResult result = db.loadLatestTaskResult(taskResultId);
+                if (result == null) {
                     schedules.add(schedule);
+                } else if (StringUtils.isNotEmpty(schedule.scheduleString)) {
+                    Date date = ScheduleHelper.nextSchedule(schedule.scheduleString, result.getEndDate());
+                    if (date.before(new Date())) {
+                        schedules.add(schedule);
+                    }
                 }
             }
         }
@@ -561,60 +483,75 @@ public abstract class BridgeDataProvider extends DataProvider
         return schedulesAndTasksModel;
     }
 
-    private TaskModel loadTaskModel(Context context, SchedulesAndTasksModel.TaskScheduleModel task)
-    {
-        TaskModel taskModel = ResourceManager.getInstance()
-                .getTask(task.taskFileName)
-                .create(context);
+    private String getTaskResultId(Context context, SchedulesAndTasksModel.TaskScheduleModel task) {
+        TaskModel taskModel = loadTaskModel(context, task);
+        if (taskModel != null) {
+            return taskModel.identifier;
+        } else {
+            return task.taskID;
+        }
+    }
 
-        // cache guid and createdOnDate
-        loadedTaskGuids.put(taskModel.identifier, taskModel.guid);
-        loadedTaskDates.put(taskModel.identifier, taskModel.createdOn);
+    @Nullable
+    private TaskModel loadTaskModel(Context context, SchedulesAndTasksModel.TaskScheduleModel task) {
+        if ("APCGenericSurveyTaskViewController".equalsIgnoreCase(task.taskClassName)) {
+            if (task.taskFileName == null) {
+                LogExt.e(getClass(), "No filename found for task with id: " + task.taskID);
+                return null;
+            }
 
-        return taskModel;
+            TaskModel taskModel = ResourceManager.getInstance()
+                    .getTask(task.taskFileName)
+                    .create(context);
+
+            // cache guid and createdOnDate
+            loadedTaskGuids.put(taskModel.identifier, taskModel.guid);
+            loadedTaskDates.put(taskModel.identifier, taskModel.createdOn);
+
+            return taskModel;
+        }
+        return null;
     }
 
     @Override
-    public Task loadTask(Context context, SchedulesAndTasksModel.TaskScheduleModel task)
-    {
-        // currently we only support task json files, override this method to taskClassName
-        if(StringUtils.isEmpty(task.taskFileName))
-        {
+    public Task loadTask(Context context, SchedulesAndTasksModel.TaskScheduleModel task) {
+        TaskModel taskModel = loadTaskModel(context, task);
+        if (taskModel == null) {
             return null;
         }
-
-        TaskModel taskModel = loadTaskModel(context, task);
+        // Currently, we only support SmartSurvey TaskModels
         SmartSurveyTask smartSurveyTask = new SmartSurveyTask(context, taskModel);
         return smartSurveyTask;
     }
 
     @Override
-    public void uploadTaskResult(Context context, TaskResult taskResult)
-    {
+    public void uploadTaskResult(Context context, TaskResult taskResult) {
         // Update/Create TaskNotificationService
-        if(AppPrefs.getInstance(context).isTaskReminderEnabled())
-        {
+        if (AppPrefs.getInstance(context).isTaskReminderEnabled()) {
             Log.i("SampleDataProvider", "uploadTaskResult() _ isTaskReminderEnabled() = true");
 
             String chronTime = findChronTime(taskResult.getIdentifier());
 
             // If chronTime is null then either the task is not repeating OR its not found within
             // the task_and_schedules.xml
-            if(chronTime != null)
-            {
+            if (chronTime != null) {
                 scheduleReminderNotification(context, taskResult.getEndDate(), chronTime);
             }
         }
 
         List<BridgeDataInput> files = new ArrayList<>();
 
-        for(StepResult stepResult : taskResult.getResults().values())
-        {
-            SurveyAnswer surveyAnswer = SurveyAnswer.create(stepResult);
-            files.add(new BridgeDataInput(surveyAnswer,
-                    SurveyAnswer.class,
-                    stepResult.getIdentifier() + ".json",
-                    FormatHelper.DEFAULT_FORMAT.format(stepResult.getEndDate())));
+        for (StepResult stepResult : taskResult.getResults().values()) {
+            //check for null stepResult here
+            //InstructionSteps have a null stepResult
+            if (stepResult != null) {
+                SurveyAnswer surveyAnswer = SurveyAnswer.create(stepResult);
+                files.add(new BridgeDataInput(surveyAnswer,
+                        SurveyAnswer.class,
+                        stepResult.getIdentifier() + ".json",
+                        FormatHelper.DEFAULT_FORMAT.format(stepResult.getEndDate())));
+            }
+
         }
 
         uploadBridgeData(context,
@@ -624,20 +561,16 @@ public abstract class BridgeDataProvider extends DataProvider
                 files);
     }
 
-    public void uploadBridgeData(Context context, Info info, BridgeDataInput... dataFiles)
-    {
+    public void uploadBridgeData(Context context, Info info, BridgeDataInput... dataFiles) {
         uploadBridgeData(context, info, Arrays.asList(dataFiles));
     }
 
-    public void uploadBridgeData(Context context, Info info, List<BridgeDataInput> dataFiles)
-    {
-        try
-        {
+    public void uploadBridgeData(Context context, Info info, List<BridgeDataInput> dataFiles) {
+        try {
             BridgeDataArchive archive = new BridgeDataArchive(info);
             archive.start(getFilesDir(context));
 
-            for(BridgeDataInput dataFile : dataFiles)
-            {
+            for (BridgeDataInput dataFile : dataFiles) {
                 archive.addFile(context, dataFile);
             }
 
@@ -647,31 +580,25 @@ public abstract class BridgeDataProvider extends DataProvider
 
             ((UploadQueue) StorageAccess.getInstance().getAppDatabase()).saveUploadRequest(request);
             uploadPendingFiles(context);
-        }
-        catch(IOException e)
-        {
+        } catch (IOException e) {
             throw new RuntimeException("Error encrypting initial task data", e);
         }
     }
 
     // these stink, I should be able to query the DB and find these
-    private String getCreatedOnDate(String identifier)
-    {
+    private String getCreatedOnDate(String identifier) {
         return loadedTaskDates.get(identifier);
     }
 
-    private String getGuid(String identifier)
-    {
+    private String getGuid(String identifier) {
         return loadedTaskGuids.get(identifier);
     }
 
-    private String findChronTime(String identifier)
-    {
+    private String findChronTime(String identifier) {
         return loadedTaskCrons.get(identifier);
     }
 
-    private void scheduleReminderNotification(Context context, Date endDate, String chronTime)
-    {
+    private void scheduleReminderNotification(Context context, Date endDate, String chronTime) {
         Log.i("SampleDataProvider", "scheduleReminderNotification()");
 
         // Save TaskNotification to DB
@@ -689,23 +616,18 @@ public abstract class BridgeDataProvider extends DataProvider
     @Override
     public abstract void processInitialTaskResult(Context context, TaskResult taskResult);
 
-    public void uploadPendingFiles(Context context)
-    {
+    public void uploadPendingFiles(Context context) {
         List<UploadRequest> uploadRequests = ((UploadQueue) StorageAccess.getInstance()
                 .getAppDatabase()).loadUploadRequests();
 
         // There is an issue here, being that this will loop through the upload requests and upload
         // a zip async. The service cannot handle more than two async calls so any other requested
         // async calls fail due to SockTimeoutException
-        for(UploadRequest uploadRequest : uploadRequests)
-        {
-            if(uploadRequest.bridgeId == null)
-            {
+        for (UploadRequest uploadRequest : uploadRequests) {
+            if (uploadRequest.bridgeId == null) {
                 LogExt.d(getClass(), "Starting upload for request: " + uploadRequest.name);
                 uploadFile(context, uploadRequest);
-            }
-            else
-            {
+            } else {
                 LogExt.d(getClass(),
                         "Bridge ID found, confirming upload for: " + uploadRequest.name);
                 confirmUpload(context, uploadRequest);
@@ -713,15 +635,11 @@ public abstract class BridgeDataProvider extends DataProvider
         }
     }
 
-    protected void uploadFile(Context context, UploadRequest request)
-    {
+    protected void uploadFile(Context context, UploadRequest request) {
         service.requestUploadSession(request).flatMap(response -> {
-            if(response.isSuccess())
-            {
+            if (response.isSuccess()) {
                 return uploadToS3(context, request, response.body());
-            }
-            else
-            {
+            } else {
                 handleError(context, response.code());
                 throw new RuntimeException(response.message());
             }
@@ -733,15 +651,12 @@ public abstract class BridgeDataProvider extends DataProvider
 
             return service.uploadComplete(id);
         }).subscribeOn(Schedulers.io()).subscribe(completeResponse -> {
-            if(completeResponse.isSuccess())
-            {
+            if (completeResponse.isSuccess()) {
                 LogExt.d(getClass(), "Notified bridge of s3 upload, need to confirm");
                 // update UploadRequest in DB with id for later confirmation
                 ((UploadQueue) StorageAccess.getInstance().getAppDatabase()).saveUploadRequest(
                         request);
-            }
-            else
-            {
+            } else {
                 handleError(context, completeResponse.code());
             }
         }, error -> {
@@ -751,8 +666,7 @@ public abstract class BridgeDataProvider extends DataProvider
     }
 
     @NonNull
-    private Observable<String> uploadToS3(Context context, UploadRequest request, UploadSession uploadSession)
-    {
+    private Observable<String> uploadToS3(Context context, UploadRequest request, UploadSession uploadSession) {
         // retrofit doesn't like making requests outside of your api, use okhttp to make the call
         return Observable.create(subscriber -> {
             // Request will fail without Content-MD5, Content-Type, and Content-Length
@@ -765,40 +679,31 @@ public abstract class BridgeDataProvider extends DataProvider
                     .build();
 
             okhttp3.Response response = null;
-            try
-            {
+            try {
                 response = new OkHttpClient().newCall(awsRequest).execute();
 
-                if(response.isSuccessful())
-                {
+                if (response.isSuccessful()) {
                     LogExt.d(getClass(), "Successful s3 upload");
                     subscriber.onNext(uploadSession.id);
-                }
-                else
-                {
+                } else {
                     handleError(context, response.code());
                     throw new RuntimeException("Response unsuccessful, code: " + response.code());
                 }
-            }
-            catch(IOException e)
-            {
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         });
     }
 
-    private void confirmUpload(Context context, UploadRequest request)
-    {
+    private void confirmUpload(Context context, UploadRequest request) {
         service.uploadStatus(request.bridgeId).subscribeOn(Schedulers.io()).subscribe(response -> {
-            if(response.isSuccess())
-            {
+            if (response.isSuccess()) {
                 UploadValidationStatus uploadStatus = response.body();
 
                 LogExt.d(getClass(), "Received validation status from Bridge(" +
                         uploadStatus.getStatus() + ")");
 
-                switch(uploadStatus.getStatus())
-                {
+                switch (uploadStatus.getStatus()) {
                     case UNKNOWN:
                     case VALIDATION_FAILED:
                         String errorText = "ERROR: Bridge validation of file upload failed for: " +
@@ -829,9 +734,7 @@ public abstract class BridgeDataProvider extends DataProvider
                         // No action necessary
                         break;
                 }
-            }
-            else
-            {
+            } else {
                 handleError(context, response.code());
             }
 
@@ -857,12 +760,10 @@ public abstract class BridgeDataProvider extends DataProvider
      * 500	BridgeServerException	        variable
      * 503	ServiceUnavailableException	    variable
      **/
-    private void handleError(Context context, int responseCode)
-    {
+    private void handleError(Context context, int responseCode) {
         String intentAction = null;
 
-        switch(responseCode)
-        {
+        switch (responseCode) {
             // Not signed in.
             case 401:
                 intentAction = DataProvider.ERROR_NOT_AUTHENTICATED;
@@ -874,35 +775,28 @@ public abstract class BridgeDataProvider extends DataProvider
                 break;
         }
 
-        if(intentAction != null)
-        {
+        if (intentAction != null) {
             LocalBroadcastManager.getInstance(context).sendBroadcast(new Intent(intentAction));
         }
     }
 
-    private void deleteUploadRequest(Context context, UploadRequest request)
-    {
+    private void deleteUploadRequest(Context context, UploadRequest request) {
         ((UploadQueue) StorageAccess.getInstance().getAppDatabase()).deleteUploadRequest(request);
 
         File file = new File(getFilesDir(context), request.name);
-        if(file.exists() && file.delete())
-        {
+        if (file.exists() && file.delete()) {
             LogExt.d(getClass(), "Deleted file: " + file.getName());
-        }
-        else
-        {
+        } else {
             LogExt.d(getClass(), "Could not delete file: " + request.name);
         }
     }
 
     // figure out what directory to save files in and where to put this method
-    public static File getFilesDir(Context context)
-    {
+    public static File getFilesDir(Context context) {
         return new File(context.getFilesDir() + "/upload_request/");
     }
 
-    public interface BridgeService
-    {
+    public interface BridgeService {
 
         /**
          * @return One of the following responses
