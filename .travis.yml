@@ -1,2 +1,4 @@
 language: android
 
+after_succes:
+  - bash <(curl -s https://codecov.io/bash)
