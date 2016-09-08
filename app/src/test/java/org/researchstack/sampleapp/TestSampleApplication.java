@@ -1,4 +1,4 @@
-package org.researchstack.molemapper;
+package org.researchstack.sampleapp;
 
 import android.app.Application;
 import android.content.Context;
@@ -13,15 +13,15 @@ import java.lang.reflect.Method;
 import static org.mockito.Mockito.mock;
 
 /**
- * Replaces MoleMapperApplication for unit test purposes.
+ * Replaces SampleApplication for unit test purposes.
  */
-public class TestMoleMapperApplication extends Application implements TestLifecycleApplication {
+public class TestSampleApplication extends Application implements TestLifecycleApplication {
     @Override
     public void onCreate() {
         super.onCreate();
         MultiDex.install(this);
 
-        ResearchStack.init(this, new MoleMapperResearchStack() {
+        ResearchStack.init(this, new SampleResearchStack() {
             @Override
             protected AppDatabase createAppDatabaseImplementation(Context context) {
                 // Used to initialize ResearchStack using a mock AppDatabase. Roboelectric and

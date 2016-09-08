@@ -1,18 +1,17 @@
-package org.researchstack.molemapper.bridge;
-
-import android.util.Log;
-
-import static org.junit.Assert.assertTrue;
+package org.researchstack.sampleapp.bridge;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import org.researchstack.molemapper.BuildConfig;
+import org.researchstack.sampleapp.BuildConfig;
+import org.researchstack.sampleapp.SampleDataProvider;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.sagebionetworks.bridge.researchstack.BridgeDataProvider;
 
 import java.util.regex.Pattern;
+
+import static org.junit.Assert.assertTrue;
 
 
 /**
@@ -39,7 +38,7 @@ public class BridgeDataProviderTest {
 
     @Before
     public void setUp() {
-        bridgeDataProvider = new MoleMapperDataProvider();
+        bridgeDataProvider = new SampleDataProvider();
     }
 
     @Test

@@ -105,7 +105,7 @@ public abstract class BridgeDataProvider extends DataProvider
 
     protected abstract String getStudyId();
 
-    protected final String getUserAgent() {
+    public final String getUserAgent() {
         return getStudyName() + "/" + getAppVersion() + " (" + getDeviceName() + "; Android " + Build.VERSION.RELEASE + ") BridgeSDK/0";
     }
 
