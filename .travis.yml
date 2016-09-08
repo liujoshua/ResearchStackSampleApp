@@ -14,4 +14,4 @@ after_succes:
   - bash <(curl -s https://codecov.io/bash)
 
 script:
-  - ./gradlew build connectedCheck --debug --stacktrace
+  - ./gradlew build connectedCheck --debug --info
