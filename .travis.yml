@@ -14,7 +14,7 @@ after_succes:
   - bash <(curl -s https://codecov.io/bash)
 
 script:
-  - ./gradlew build connectedCheck --debug --info
+  - ./gradlew build jacocoTestReport connectedCheck --debug --info
 
 before_cache:
   - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
