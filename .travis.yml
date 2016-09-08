@@ -1,3 +1,6 @@
+sudo: required
+dist: trusty
+
 language: android
 jdk: oraclejdk8
 android:
@@ -10,3 +13,6 @@ android:
     - extra-google-m2repository  
 after_succes:
   - bash <(curl -s https://codecov.io/bash)
+
+script:
+  - ./gradlew build connextCheck --debug --stacktrace
