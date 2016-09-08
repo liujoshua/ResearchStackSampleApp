@@ -1,4 +1,4 @@
-sudo: required
+sudo: required # gives us more memory for gradle task :app:transformClassesWithDexForRelease
 
 language: android
 jdk: oraclejdk8
