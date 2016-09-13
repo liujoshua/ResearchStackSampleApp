@@ -11,7 +11,7 @@ public class SampleDataProvider extends BridgeDataProvider
 {
     public SampleDataProvider()
     {
-        super();
+        super(BuildConfig.STUDY_BASE_URL, BuildConfig.STUDY_ID, "PLACEHOLDER");
     }
 
     @Override
@@ -31,27 +31,4 @@ public class SampleDataProvider extends BridgeDataProvider
     {
         return ResourceManager.getInstance().getTasksAndSchedules();
     }
-
-    @Override
-    protected String getBaseUrl()
-    {
-        return BuildConfig.STUDY_BASE_URL;
-    }
-
-    @Override
-    protected String getStudyId()
-    {
-        return BuildConfig.STUDY_ID;
-    }
-
-    @Override
-    protected String getStudyName() {
-        return BuildConfig.STUDY_NAME;
-    }
-
-    @Override
-    protected int getAppVersion() {
-        return BuildConfig.VERSION_CODE;
-    }
-
 }
