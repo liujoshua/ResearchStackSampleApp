@@ -115,8 +115,7 @@ public class SampleUiManager extends UiManager
         if (mapResult == null) return false;
         Boolean answer = (Boolean)mapResult.get("answer");
         System.out.println("id = : " + id + ", answer = " + answer);
-        if (answer == null || answer == false) return false;
-        else return true;
+        return !(answer == null || answer == false);
 
     }
 
@@ -135,8 +134,7 @@ public class SampleUiManager extends UiManager
             answer = getBooleanAnswer(mapStepResult, "signupInclusionEnglishStep");
             if (answer == false) return false;
             answer = getBooleanAnswer(mapStepResult, "signupInclusionUsaStep");
-            if (answer == false) return false;
-            return true;
+            return answer != false;
         }
         return false;
     }

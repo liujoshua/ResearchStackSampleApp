@@ -218,7 +218,7 @@ public abstract class BridgeDataProvider extends DataProvider {
     }
 
     /**
-     * @param context
+     * @param context application context
      * @return true if we are consented
      */
     @Override
@@ -549,8 +549,7 @@ public abstract class BridgeDataProvider extends DataProvider {
         }
 
         TaskModel taskModel = loadTaskModel(context, task);
-        SmartSurveyTask smartSurveyTask = new SmartSurveyTask(context, taskModel);
-        return smartSurveyTask;
+        return new SmartSurveyTask(context, taskModel);
     }
 
     @Override
