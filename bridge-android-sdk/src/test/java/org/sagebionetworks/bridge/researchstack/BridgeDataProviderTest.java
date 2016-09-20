@@ -2,6 +2,8 @@ package org.sagebionetworks.bridge.researchstack;
 
 import android.content.Context;
 
+import com.google.common.collect.Lists;
+
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -20,6 +22,7 @@ import org.sagebionetworks.bridge.researchstack.wrapper.StorageAccessWrapper;
 import org.sagebionetworks.bridge.sdk.rest.BridgeService;
 import org.sagebionetworks.bridge.sdk.rest.UserSessionInfo;
 import org.sagebionetworks.bridge.sdk.rest.model.BridgeMessageResponse;
+import org.sagebionetworks.bridge.sdk.rest.model.EmailBody;
 import org.sagebionetworks.bridge.sdk.rest.model.SignInBody;
 import org.sagebionetworks.bridge.sdk.rest.model.SignUpBody;
 
@@ -27,6 +30,7 @@ import retrofit2.Response;
 import rx.Observable;
 import rx.observers.TestSubscriber;
 
+import static junit.framework.Assert.assertFalse;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
@@ -36,21 +40,7 @@ import static org.mockito.Mockito.when;
 /**
  * Created by liujoshua on 9/12/16.
  */
-public class BridgeDataProviderTest {
-
-    private ResourcePathManager.Resource publicKeyRes;
-    private ResourcePathManager.Resource tasksAndSchedulesRes;
-    private AppPrefs appPrefs;
-    private DataProvider dataProvider;
-    private BridgeService bridgeService;
-    private StorageAccessWrapper storageAccess;
-    private Context context;
-    private PinCodeConfig pinCodeConfig;
-    private EncryptionProvider encryptionProvider;
-    private FileAccess fileAccess;
-    private BridgeEncryptedDatabase appDatabase;
-    private ConsentLocalStorage consentLocalStorage;
-    private UserLocalStorage userLocalStorage;
+public class BridgeDataProviderTest extends BridgeDataProviderTestBase {
 
     @Before
     public void beforeTest() {
@@ -73,11 +63,16 @@ public class BridgeDataProviderTest {
         consentLocalStorage = mock(ConsentLocalStorage.class);
         userLocalStorage = mock(UserLocalStorage.class);
 
-        dataProvider = new TestBridgeDataProvider(publicKeyRes, tasksAndSchedulesRes, bridgeService, appPrefs, storageAccess, userLocalStorage, consentLocalStorage);
+        bridgeDependencyLoader = mock(BridgeDependencyLoader.class);
+        when(bridgeDependencyLoader.getAppPrefs()).thenReturn(appPrefs);
+        when(bridgeDependencyLoader.getConsentLocalStorage()).thenReturn(consentLocalStorage);
+        when(bridgeDependencyLoader.getStorageAccess()).thenReturn(storageAccess);
+        when(bridgeDependencyLoader.getUserLocalStorage()).thenReturn(userLocalStorage);
+
+        dataProvider = new TestBridgeDataProvider(publicKeyRes, tasksAndSchedulesRes, bridgeDependencyLoader, bridgeService);
         context = mock(Context.class);
     }
 
-    @Ignore
     @Test
     public void testInitialize() {
         Observable<DataResponse> dataResponseObservable = dataProvider.initialize(context);
@@ -86,10 +81,7 @@ public class BridgeDataProviderTest {
         dataResponseObservable.subscribe(testSubscriber);
         testSubscriber.awaitTerminalEvent();
 
-        testSubscriber.assertNoErrors();
-        testSubscriber.assertCompleted();
-        testSubscriber.assertUnsubscribed();
-        testSubscriber.assertValueCount(1);
+        assertExactlyOneSuccessfulEvent(testSubscriber);
     }
 
     @Test
@@ -104,10 +96,7 @@ public class BridgeDataProviderTest {
 
         verify(bridgeService).signUp(isA(SignUpBody.class));
 
-        testSubscriber.assertNoErrors();
-        testSubscriber.assertCompleted();
-        testSubscriber.assertUnsubscribed();
-        testSubscriber.assertValueCount(1);
+        assertExactlyOneSuccessfulEvent(testSubscriber);
     }
 
     @Test
@@ -116,64 +105,74 @@ public class BridgeDataProviderTest {
 
         Observable<Response<UserSessionInfo>> bridgeResponse = Observable.just(Response.success(session));
         when(bridgeService.signIn(isA(SignInBody.class))).thenReturn(bridgeResponse);
-        //when(appDatabase.loadUploadRequests()).thenReturn(Lists.newArrayList());
+        when(appDatabase.loadUploadRequests()).thenReturn(Lists.newArrayList());
 
-        Observable<DataResponse> dataResponseObservable = dataProvider.signIn(context, "email", "password");
-        TestSubscriber<DataResponse> testSubscriber = new TestSubscriber<>();
-        dataResponseObservable.subscribe(testSubscriber);
-        testSubscriber.awaitTerminalEvent();
+        TestSubscriber<DataResponse> testSubscriber = signIn("email", "password", session);
 
         verify(bridgeService).signIn(isA(SignInBody.class));
         verify(userLocalStorage).saveUserSession(eq(session));
         verify(appDatabase).loadUploadRequests();
 
-        testSubscriber.assertNoErrors();
-        testSubscriber.assertCompleted();
-        testSubscriber.assertUnsubscribed();
-        testSubscriber.assertValueCount(1);
+        assertExactlyOneSuccessfulEvent(testSubscriber);
     }
 
     @Test
     public void testSignOut() {
-        Observable<Response> bridgeResponse = Observable.just(Response.success(null));
-        when(bridgeService.signOut()).thenReturn(bridgeResponse);
+        BridgeMessageResponse bridgeResponse = new BridgeMessageResponse();
 
-        Observable<DataResponse> dataResponseObservable = dataProvider.signOut(context);
+        TestSubscriber<DataResponse> testSubscriber = signOut(bridgeResponse);
+
+        verify(bridgeService).signOut();
+
+        assertExactlyOneSuccessfulEvent(testSubscriber);
+    }
+
+    @Test
+    public void testResendEmailVerification() {
+        Observable bridgeResponse = Observable.just(new BridgeMessageResponse());
+
+        when(bridgeService.resendEmailVerification(isA(EmailBody.class))).thenReturn(bridgeResponse);
+
+        Observable<DataResponse> dataResponseObservable = dataProvider.resendEmailVerification(context, "email");
 
         TestSubscriber<DataResponse> testSubscriber = new TestSubscriber<>();
         dataResponseObservable.subscribe(testSubscriber);
         testSubscriber.awaitTerminalEvent();
 
-        verify(bridgeService).signOut();
+        verify(bridgeService).resendEmailVerification(isA(EmailBody.class));
 
-        testSubscriber.assertNoErrors();
-        testSubscriber.assertCompleted();
-        testSubscriber.assertUnsubscribed();
-        testSubscriber.assertValueCount(1);
+        assertExactlyOneSuccessfulEvent(testSubscriber);
     }
 
-    @Ignore
-    @Test
-    public void testResendEmailVerification() {
-        Observable<DataResponse> dataResponseObservable = dataProvider.resendEmailVerification(context, "email");
-    }
-
-    @Ignore
     @Test
     public void testIsSignedUp() {
+        waitForInitialize();
         boolean isSignedUp = dataProvider.isSignedUp(context);
+        verify(userLocalStorage).loadUser(context);
+
+        assertFalse(isSignedUp);
     }
 
-    @Ignore
     @Test
     public void testIsSignedIn() {
+        waitForInitialize();
+
         boolean isSignedIn = dataProvider.isSignedIn(context);
+        verify(userLocalStorage).loadUserSession(context);
+
+        assertFalse(isSignedIn);
     }
 
-    @Ignore
     @Test
     public void testIsConsented() {
+        waitForInitialize();
+
+        when(userLocalStorage.loadUserSession(context)).thenReturn(mock(UserSessionInfo.class));
         boolean isConsented = dataProvider.isConsented(context);
+        verify(userLocalStorage).loadUserSession(context);
+        verify(consentLocalStorage).hasConsent();
+
+        assertFalse(isConsented);
     }
 
     @Ignore
@@ -247,5 +246,4 @@ public class BridgeDataProviderTest {
     public void testForgotPassword() {
         Observable<DataResponse> dataResponseObservable = dataProvider.forgotPassword(context, "email");
     }
-
 }

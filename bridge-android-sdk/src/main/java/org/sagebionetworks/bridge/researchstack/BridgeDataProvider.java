@@ -84,7 +84,6 @@ public abstract class BridgeDataProvider extends DataProvider {
     private BridgeService service;
     protected UserSessionInfo userSessionInfo;
     protected Gson gson = new Gson();
-    protected boolean signedIn = false;
 
     protected Retrofit retrofit;
     protected BridgeHeaderInterceptor interceptor;
@@ -105,26 +104,25 @@ public abstract class BridgeDataProvider extends DataProvider {
     private final String studyId;
     private final String userAgent;
     private final String baseUrl;
+    private final BridgeDependencyLoader bridgeDependencyLoader;
 
-    //used by tests to mock service
-    BridgeDataProvider(String baseUrl, String studyId, String userAgent, BridgeService service, AppPrefs appPrefs, StorageAccessWrapper storageAccess, UserLocalStorage userLocalStorage, ConsentLocalStorage consentLocalStorage) {
+    public BridgeDataProvider(String baseUrl, String studyId, String userAgent, BridgeDependencyLoader bridgeDependencyLoader) {
         this.baseUrl = baseUrl;
         this.studyId = studyId;
         this.userAgent = userAgent;
-        this.appPrefs = appPrefs;
-        this.service = service;
-        this.storageAccess = storageAccess;
-        this.userLocalStorage = userLocalStorage;
-        this.consentLocalStorage = consentLocalStorage;
+        this.bridgeDependencyLoader = bridgeDependencyLoader;
 
+        appPrefs = bridgeDependencyLoader.getAppPrefs();
+        consentLocalStorage = bridgeDependencyLoader.getConsentLocalStorage();
+        userLocalStorage = bridgeDependencyLoader.getUserLocalStorage();
+        storageAccess = bridgeDependencyLoader.getStorageAccess();
         updateBridgeService(null);
     }
 
-    public BridgeDataProvider(String baseUrl, String studyId, String userAgent) {
-        this.baseUrl = baseUrl;
-        this.studyId = studyId;
-        this.userAgent = userAgent;
-        updateBridgeService(null);
+    //used by tests to mock service
+    BridgeDataProvider(String baseUrl, String studyId, String userAgent, BridgeDependencyLoader bridgeDependencyLoader, BridgeService service) {
+        this(baseUrl, studyId, userAgent, bridgeDependencyLoader);
+        this.service = service;
     }
 
     private static class BridgeHeaderInterceptor implements Interceptor {
@@ -198,13 +196,8 @@ public abstract class BridgeDataProvider extends DataProvider {
 
     @Override
     public Observable<DataResponse> initialize(Context context) {
-        appPrefs = AppPrefs.getInstance(context);
-        consentLocalStorage = new ConsentLocalStorage(context, gson, storageAccess.getFileAccess());
-        userLocalStorage = new UserLocalStorage(context, gson, storageAccess.getFileAccess());
-
         return Observable.defer(() -> {
             userSessionInfo = userLocalStorage.loadUserSession(context);
-            signedIn = userSessionInfo != null;
 
             updateBridgeService(userSessionInfo);
             return Observable.just(new DataResponse(true, null));
@@ -236,7 +229,7 @@ public abstract class BridgeDataProvider extends DataProvider {
      */
     @Override
     public boolean isConsented(Context context) {
-        return userSessionInfo.isConsented() || consentLocalStorage.hasConsent();
+        return (userSessionInfo != null && userSessionInfo.isConsented()) || consentLocalStorage.hasConsent();
     }
 
     @Override
@@ -300,8 +293,12 @@ public abstract class BridgeDataProvider extends DataProvider {
             if (userSessionInfo != null) {
                 // if we are direct from signing in, we need to load the user profile object
                 // from the server. that wouldn't work right now
-                signedIn = true;
                 userLocalStorage.saveUserSession(userSessionInfo);
+
+                User user = new User();
+                user.setEmail(username);
+                userLocalStorage.saveUser(user);
+
                 updateBridgeService(userSessionInfo);
                 checkForTempConsentAndUpload(context);
                 uploadPendingFiles(context);
@@ -314,7 +311,9 @@ public abstract class BridgeDataProvider extends DataProvider {
 
     @Override
     public Observable<DataResponse> signOut(Context context) {
-        return service.signOut().map(response -> new DataResponse(response.isSuccess(), null));
+        return service.signOut().map(response -> new DataResponse(response.isSuccess(), null)).doOnNext(response -> {
+            userLocalStorage.clearUserSession();
+        });
     }
 
     @Override
@@ -331,7 +330,7 @@ public abstract class BridgeDataProvider extends DataProvider {
 
     @Override
     public boolean isSignedIn(Context context) {
-        return signedIn;
+        return userLocalStorage.isSignedIn();
     }
 
     @Override
@@ -427,7 +426,6 @@ public abstract class BridgeDataProvider extends DataProvider {
                         LogExt.d(getClass(), "Response: " + response.code() + ", message: " +
                                 response.message());
 
-                        FileAccess fileAccess = storageAccess.getFileAccess();
                         if (consentLocalStorage.hasConsent()) {
                             consentLocalStorage.deleteConsent();
                         }

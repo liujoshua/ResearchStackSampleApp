@@ -19,8 +19,8 @@ public class TestBridgeDataProvider extends BridgeDataProvider {
     public final ResourcePathManager.Resource PUBLIC_KEY_RES;
     public final ResourcePathManager.Resource TASKS_AND_SCHEDULES;
 
-    public TestBridgeDataProvider(ResourcePathManager.Resource publicKey, ResourcePathManager.Resource tasksAndSchedules, BridgeService bridgeService, AppPrefs appPrefs, StorageAccessWrapper storageAccess, UserLocalStorage userLocalStorage, ConsentLocalStorage consentLocalStorage) {
-        super(BASE_URL, STUDY_ID, USER_AGENT, bridgeService, appPrefs, storageAccess, userLocalStorage, consentLocalStorage);
+    public TestBridgeDataProvider(ResourcePathManager.Resource publicKey, ResourcePathManager.Resource tasksAndSchedules, BridgeDependencyLoader bridgeDependencyLoader, BridgeService bridgeService) {
+        super(BASE_URL, STUDY_ID, USER_AGENT, bridgeDependencyLoader, bridgeService);
         this.PUBLIC_KEY_RES = publicKey;
         this.TASKS_AND_SCHEDULES = tasksAndSchedules;
     }

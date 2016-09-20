@@ -53,11 +53,20 @@ public class UserLocalStorage {
         }
     }
 
+    public void clearUserSession() {
+        fileAccess.clearData(applicationContext, USER_SESSION_PATH);
+    }
+
+    public boolean isSignedIn() {
+        return fileAccess.dataExists(applicationContext, USER_SESSION_PATH);
+    }
+
     private void writeJsonString(String userSessionJson, String userSessionPath) {
         fileAccess.writeData(applicationContext, userSessionPath, userSessionJson.getBytes());
     }
 
     private String loadJsonString(String path) {
-        return new String(fileAccess.readData(applicationContext, path));
+        byte[] bytes = fileAccess.readData(applicationContext, path);
+        return bytes == null ? null : new String(bytes);
     }
 }

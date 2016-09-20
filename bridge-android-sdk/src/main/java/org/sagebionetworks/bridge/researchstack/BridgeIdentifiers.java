@@ -6,14 +6,19 @@ import android.text.TextUtils;
 /**
  * Created by liujoshua on 9/12/16.
  */
-public abstract class BridgeIdentifiers {
-    public final String getUserAgent() {
-        return getStudyName() + "/" + getAppVersion() + " (" + getDeviceName() + "; Android " + Build.VERSION.RELEASE + ") BridgeSDK/0";
+public class BridgeIdentifiers {
+
+    public final String studyName;
+    public final int appVersion;
+
+    public BridgeIdentifiers(String studyName, int appVersion) {
+        this.studyName = studyName;
+        this.appVersion = appVersion;
     }
 
-    public abstract String getStudyName();
-
-    public abstract int getAppVersion();
+    public final String getUserAgent() {
+        return studyName + "/" + appVersion + " (" + getDeviceName() + "; Android " + Build.VERSION.RELEASE + ") BridgeSDK/0";
+    }
 
     private String getDeviceName() {
         String manufacturer = Build.MANUFACTURER;
