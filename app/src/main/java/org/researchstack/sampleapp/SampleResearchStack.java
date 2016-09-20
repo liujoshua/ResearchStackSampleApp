@@ -71,7 +71,7 @@ public class SampleResearchStack extends ResearchStack
     @Override
     protected DataProvider createDataProviderImplementation(Context context)
     {
-        return new SampleDataProvider();
+        return new SampleDataProvider(context);
     }
 
     @Override

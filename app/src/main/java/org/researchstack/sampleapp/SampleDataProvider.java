@@ -7,13 +7,14 @@ import org.researchstack.backbone.ResourcePathManager;
 import org.researchstack.backbone.result.TaskResult;
 import org.sagebionetworks.bridge.researchstack.BridgeDataProvider;
 import org.researchstack.skin.ResourceManager;
+import org.sagebionetworks.bridge.researchstack.BridgeDependencyLoader;
 import org.sagebionetworks.bridge.researchstack.BridgeIdentifiers;
 
 
 public class SampleDataProvider extends BridgeDataProvider {
-    public SampleDataProvider() {
+    public SampleDataProvider(Context context) {
         super(BuildConfig.STUDY_BASE_URL, BuildConfig.STUDY_ID,
-                new BridgeIdentifiers(BuildConfig.STUDY_NAME, BuildConfig.VERSION_CODE).getUserAgent());
+                new BridgeIdentifiers(BuildConfig.STUDY_NAME, BuildConfig.VERSION_CODE).getUserAgent(), new BridgeDependencyLoader(context));
     }
 
     @Override
