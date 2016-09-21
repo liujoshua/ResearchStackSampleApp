@@ -31,7 +31,7 @@ android:
 # Emulator Management: Create, Start
 before_script:
   - echo no | android create avd --force -n test -t "android-"$ANDROID_TARGET --abi $ANDROID_ABI --tag google_apis
-  - emulator -avd test -no-skin -no-audio -no-window &
+  - emulator -avd test -no-skin -no-audio -no-boot-anim -no-window &
 
 script:
   - ./gradlew build --continue --stacktrace
