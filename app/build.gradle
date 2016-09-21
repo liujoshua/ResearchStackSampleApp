@@ -50,6 +50,10 @@ android {
     dexOptions {
         javaMaxHeapSize '4g' //specify the heap size for the dex process
     }
+
+    lintOptions {
+        abortOnError false
+    }
 }
 
 dependencies {
