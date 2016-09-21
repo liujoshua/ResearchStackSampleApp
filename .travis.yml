@@ -36,7 +36,9 @@ before_script:
   - adb shell input keyevent 82 &
 
 script:
-  - ./gradlew build connectedCheck --debug --info
+  - ./gradlew build
+  - adb shell input keyevent 82
+  - ./gradlew connectedCheck --debug --info
 
 after_succes:
   - bash <(curl -s https://codecov.io/bash)
