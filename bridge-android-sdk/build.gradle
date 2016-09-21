@@ -34,7 +34,6 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'org.researchstack:skin:1.0.0.rc3'
     compile 'com.android.support:appcompat-v7:23.2.1' //23.3.0 crashes on AppCompatButton's onClick
-    compile 'net.zetetic:android-database-sqlcipher:3.3.1-2@aar'
     apt 'co.touchlab.squeaky:squeaky-processor:0.4.0.0'
     compile 'com.android.support:multidex:1.0.1'
     compile 'com.madgag.spongycastle:core:1.54.0.0'

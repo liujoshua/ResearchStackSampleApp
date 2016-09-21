@@ -21,6 +21,8 @@ android {
         buildConfigField 'String', 'STUDY_ID', studyId
         buildConfigField 'String', 'STUDY_NAME', studyName
         buildConfigField 'String', 'STUDY_BASE_URL', "\"https://webservices.sagebridge.org/\""
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
@@ -56,4 +58,11 @@ dependencies {
     compile 'org.researchstack:skin:1.0.0.rc3'
     debugCompile project(path: ':bridge-android-sdk', configuration: 'debug') // 
     releaseCompile project(":bridge-android-sdk")
+
+    androidTestCompile 'com.android.support.test:runner:0.5'
+    androidTestCompile 'com.android.support:support-annotations:23.2.1' //conflict
+    androidTestCompile 'com.android.support.test.espresso:espresso-core:2.2.2'
+    androidTestCompile 'com.android.support.test.espresso:espresso-intents:2.2.2'
+
+    compile 'net.zetetic:android-database-sqlcipher:3.5.1@aar'
 }
