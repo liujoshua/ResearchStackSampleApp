@@ -20,7 +20,7 @@ android:
     - build-tools-$ANDROID_BUILD_TOOLS_VERSION
     - android-$COMPILE_API_LEVEL
     - android-$ANDROID_TARGET
-    - addon-google_apis-google-$COMPILE_API_LEVELL
+    - addon-google_apis-google-$COMPILE_API_LEVEL
     - addon-google_apis-google-$ANDROID_TARGET
     - extra-android-m2repository
     - extra-google-m2repository  ARGET_API_LEVEL
@@ -37,6 +37,9 @@ script:
   - ./gradlew build --continue --stacktrace
   - android-wait-for-emulator
   - adb devices
+  - adb shell settings put global window_animation_scale 0
+  - adb shell settings put global transition_animation_scale 0
+  - adb shell settings put global animator_duration_scale 0
   - adb shell input keyevent 82 &
   - ./gradlew connectedCheck --continue --stacktrace
 
