@@ -47,6 +47,10 @@ android {
         exclude 'META-INF/NOTICE.txt'
     }
 
+    adbOptions {
+        timeOutInMs 120000 // set gradle's adb timeout to 2 minutes, because emulator is slow
+    }
+
     dexOptions {
         javaMaxHeapSize '4g' //specify the heap size for the dex process
     }
