@@ -55,7 +55,7 @@ script:
   - ./gradlew connectedDebugAndroidTest --continue --stacktrace -PdisablePreDex
 
 after_failure:
-  - cat /home/travis/build/liujoshua/ResearchStackSampleApp/app/build/reports/androidTests/connected/index.html
+  - cat /home/travis/build/liujoshua/ResearchStackSampleApp/app/build/reports/androidTests/connected/org.researchstack.sampleapp.OnboardingActivityTest.html
   #- adb shell screencap -p | perl -pe 's/\x0D\x0A/\x0A/g' > failurescreen.png
   # TODO: upload
 
