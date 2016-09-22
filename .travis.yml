@@ -10,8 +10,7 @@ env:
     - ANDROID_BUILD_TOOLS_VERSION=24.0.2
     - ADB_INSTALL_TIMEOUT=10 # minutes (2 minutes by default)
   matrix:
-    - ANDROID_TARGET=24 ANDROID_ABI=armeabi-v7a
-    - ANDROID_TARGET=23 ANDROID_ABI=armeabi-v7a
+    - ANDROID_TARGET=22 ANDROID_ABI=armeabi-v7a
 
 android:
   components:
