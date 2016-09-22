@@ -51,7 +51,7 @@ script:
   # Screenshot for debugging
   - adb shell screencap -p | perl -pe 's/\x0D\x0A/\x0A/g' > bootscreen.png
   # TODO: upload
-  - ./gradlew connectedCheck --continue --stacktrace -PdisablePreDex
+  - ./gradlew connectedDebugAndroidTest --continue --stacktrace -PdisablePreDex
 
 after_failure:
   - adb shell screencap -p | perl -pe 's/\x0D\x0A/\x0A/g' > failurescreen.png
