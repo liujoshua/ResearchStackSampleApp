@@ -34,6 +34,10 @@ android {
             debuggable true
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // set gradle's adb timeout to 10 minutes, because emulator is slow
+            // neither adbOptions nor ADB_INSTALL_TIMEOUT are sufficient
+            // https://blog.cyplo.net/posts/2015/10/25/android-integration-test-timeouts.html
+            com.android.ddmlib.DdmPreferences.setTimeOut(600000)
         }
     }
 
@@ -48,7 +52,7 @@ android {
     }
 
     adbOptions {
-        timeOutInMs 180000 // set gradle's adb timeout to 3 minutes, because emulator is slow
+        timeOutInMs 600000 // set gradle's adb timeout to 10 minutes, because emulator is slow
     }
 
     dexOptions {
