@@ -36,7 +36,7 @@ before_script:
   - echo no | android create avd --force -n test -t "android-"$ANDROID_TARGET --abi $ANDROID_ABI --tag google_apis
 
 script:
-  - ./gradlew build --continue --stacktrace
+  - ./gradlew build --continue --stacktrace -PdisablePreDex
   # Start and wait for emulator
   - emulator -avd test -no-skin -no-audio -no-window &
   - android-wait-for-emulator
@@ -51,7 +51,7 @@ script:
   # Screenshot for debugging
   - adb shell screencap -p | perl -pe 's/\x0D\x0A/\x0A/g' > bootscreen.png
   # TODO: upload
-  - ./gradlew connectedCheck --continue --stacktrace
+  - ./gradlew connectedCheck --continue --stacktrace -PdisablePreDex
 
 after_failure:
   - adb shell screencap -p | perl -pe 's/\x0D\x0A/\x0A/g' > failurescreen.png
