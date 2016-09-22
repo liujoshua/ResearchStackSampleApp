@@ -37,6 +37,7 @@ before_script:
 
 script:
   - ./gradlew build --continue --stacktrace -PdisablePreDex
+  - ./gradlew assembleDebugAndroidTest --continue --stacktrace -PdisablePreDex
   # Start and wait for emulator
   - emulator -avd test -no-skin -no-audio -no-window &
   - android-wait-for-emulator
