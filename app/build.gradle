@@ -48,7 +48,7 @@ android {
     }
 
     adbOptions {
-        timeOutInMs 120000 // set gradle's adb timeout to 2 minutes, because emulator is slow
+        timeOutInMs 180000 // set gradle's adb timeout to 3 minutes, because emulator is slow
     }
 
     dexOptions {

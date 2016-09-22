@@ -8,7 +8,7 @@ env:
   global:
     - COMPILE_API_LEVEL=24
     - ANDROID_BUILD_TOOLS_VERSION=24.0.2
-    - ADB_INSTALL_TIMEOUT=5 # minutes (2 minutes by default)
+    - ADB_INSTALL_TIMEOUT=10 # minutes (2 minutes by default)
   matrix:
     - ANDROID_TARGET=24 ANDROID_ABI=armeabi-v7a
     - ANDROID_TARGET=23 ANDROID_ABI=armeabi-v7a
@@ -41,6 +41,7 @@ script:
   # Start and wait for emulator
   - emulator -avd test -no-skin -no-audio -no-window &
   - android-wait-for-emulator
+  # workaround for NPEs while disabling animations due to missing Activity Manager
   - sleep 15
   # Disable animations
   - adb shell settings put global window_animation_scale 0
