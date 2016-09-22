@@ -8,11 +8,13 @@ import android.support.test.filters.LargeTest;
 import android.support.test.runner.AndroidJUnit4;
 import android.util.Log;
 
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.researchstack.skin.ui.OnboardingActivity;
 
+import static android.support.test.espresso.Espresso.closeSoftKeyboard;
 import static android.support.test.espresso.Espresso.onView;
 import static android.support.test.espresso.action.ViewActions.click;
 import static android.support.test.espresso.action.ViewActions.scrollTo;
@@ -30,6 +32,10 @@ public class OnboardingActivityTest {
     @Rule
     public IntentsTestRule<OnboardingActivity> activityRule = new IntentsTestRule<>(OnboardingActivity.class);
 
+    @Before
+    public void setup() {
+        closeSoftKeyboard();
+    }
     @Test
     public void testClickSignUp() {
         ViewInteraction introSignupButton = onView(withId(R.id.intro_sign_up));
