@@ -1,9 +1,12 @@
 package org.researchstack.sampleapp;
 
 import android.content.ComponentName;
+import android.support.test.espresso.PerformException;
+import android.support.test.espresso.ViewInteraction;
 import android.support.test.espresso.intent.rule.IntentsTestRule;
 import android.support.test.filters.LargeTest;
 import android.support.test.runner.AndroidJUnit4;
+import android.util.Log;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,8 +31,14 @@ public class OnboardingActivityTest {
     public IntentsTestRule<OnboardingActivity> activityRule = new IntentsTestRule<>(OnboardingActivity.class);
 
     @Test
-    public void testClickSignUp() throws InterruptedException {
-        onView(withId(R.id.intro_sign_up)).perform(scrollTo()).perform(click());
+    public void testClickSignUp() {
+        ViewInteraction introSignupButton = onView(withId(R.id.intro_sign_up));
+        try {
+            introSignupButton.perform(scrollTo());
+        } catch(PerformException e) {
+            Log.e(OnboardingActivityTest.class.getCanonicalName(), "Could not scroll to sign up botton");
+        }
+        introSignupButton.perform(click());
 
         intended(hasComponent(new ComponentName("org.researchstack.skin", "org.researchstack.skin.ui.SignUpTaskActivity")));
     }
