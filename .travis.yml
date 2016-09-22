@@ -50,15 +50,16 @@ script:
   # Unlock emulator
   - adb shell input keyevent 82
   # Screenshot for debugging
-  - adb shell screencap -p | perl -pe 's/\x0D\x0A/\x0A/g' > bootscreen.png
+  #- adb shell screencap -p | perl -pe 's/\x0D\x0A/\x0A/g' > bootscreen.png
   # TODO: upload
   - ./gradlew connectedDebugAndroidTest --continue --stacktrace -PdisablePreDex
 
 after_failure:
-  - adb shell screencap -p | perl -pe 's/\x0D\x0A/\x0A/g' > failurescreen.png
+  - cat /home/travis/build/liujoshua/ResearchStackSampleApp/app/build/reports/androidTests/connected/index.html
+  #- adb shell screencap -p | perl -pe 's/\x0D\x0A/\x0A/g' > failurescreen.png
   # TODO: upload
 
-after_succes:
+after_success:
   # bash <(curl -s https://codecov.io/bash)
 
 before_cache:
