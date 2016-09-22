@@ -30,21 +30,35 @@ android:
 
 # Emulator Management: Create, Start
 before_script:
+  # Create emulator
   - echo no | android create avd --force -n test -t "android-"$ANDROID_TARGET --abi $ANDROID_ABI --tag google_apis
-  
+  # Download imgur tool
+  - wget http://imgur.com/tools/imgurbash.sh
+  - chmod a+x imgurbash.sh
+
 script:
   - ./gradlew build --continue --stacktrace
-  - emulator -avd test -no-skin -no-audio -no-boot-anim -no-window &
+  # Start and wait for emulator
+  - emulator -avd test -no-skin -no-audio -no-window &
   - android-wait-for-emulator
   - adb devices
+  # Disable animations
   - adb shell settings put global window_animation_scale 0
   - adb shell settings put global transition_animation_scale 0
   - adb shell settings put global animator_duration_scale 0
-  - adb shell input keyevent 82 &
+  # Unlock emulator
+  - adb shell input keyevent 82
+  # Screenshot for debugging
+  - adb shell screencap -p | sed 's/\r$//' > bootscreen.png
+  - ./imgurbash.sh bootscreen.png
   - ./gradlew connectedCheck --continue --stacktrace
 
+after_failure:
+  - adb shell screencap -p | sed 's/\r$//' > failurescreen.png
+  - ./imgurbash.sh failurescreen.png
+
 after_succes:
-  - bash <(curl -s https://codecov.io/bash)
+  # bash <(curl -s https://codecov.io/bash)
 
 before_cache:
   - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
