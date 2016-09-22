@@ -41,7 +41,7 @@ script:
   # Start and wait for emulator
   - emulator -avd test -no-skin -no-audio -no-window &
   - android-wait-for-emulator
-  - adb devices
+  - sleep 15
   # Disable animations
   - adb shell settings put global window_animation_scale 0
   - adb shell settings put global transition_animation_scale 0
