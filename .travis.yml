@@ -32,9 +32,6 @@ android:
 before_script:
   # Create emulator
   - echo no | android create avd --force -n test -t "android-"$ANDROID_TARGET --abi $ANDROID_ABI --tag google_apis
-  # Download imgur tool
-  - wget http://imgur.com/tools/imgurbash.sh
-  - chmod a+x imgurbash.sh
 
 script:
   - ./gradlew build --continue --stacktrace
@@ -51,12 +48,12 @@ script:
   - adb shell input keyevent 82
   # Screenshot for debugging
   - adb shell screencap -p | perl -pe 's/\x0D\x0A/\x0A/g' > bootscreen.png
-  - ./imgurbash.sh bootscreen.png
+  # TODO: upload
   - ./gradlew connectedCheck --continue --stacktrace
 
 after_failure:
   - adb shell screencap -p | perl -pe 's/\x0D\x0A/\x0A/g' > failurescreen.png
-  - ./imgurbash.sh failurescreen.png
+  # TODO: upload
 
 after_succes:
   # bash <(curl -s https://codecov.io/bash)
