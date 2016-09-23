@@ -42,7 +42,7 @@ public class OnboardingActivityTest {
         ViewInteraction introSignupButton = onView(withId(R.id.intro_sign_up));
 
         introSignupButton.perform(scrollTo());
-        
+
         introSignupButton.perform(click());
 
         intended(hasComponent(new ComponentName("org.researchstack.skin", "org.researchstack.skin.ui.SignUpTaskActivity")));

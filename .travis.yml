@@ -34,10 +34,7 @@ android:
 before_script:
   # Create emulator
   - echo no | android create avd --force -n test -t "android-"$ANDROID_TARGET --abi $ANDROID_ABI --tag google_apis
-
-script:
-  - ./gradlew build --continue --stacktrace -PdisablePreDex
-  - ./gradlew assembleDebugAndroidTest --continue --stacktrace -PdisablePreDex
+  - ./gradlew clean assembleDebugAndroidTest --continue --stacktrace -PdisablePreDex
   # Start and wait for emulator
   - emulator -avd test -no-skin -no-audio -no-window &
   - android-wait-for-emulator
@@ -47,12 +44,15 @@ script:
   - adb shell settings put global window_animation_scale 0
   - adb shell settings put global transition_animation_scale 0
   - adb shell settings put global animator_duration_scale 0
+
+script:
+  - ./gradlew build --continue --stacktrace -PdisablePreDex
+  - adb logcat *:W | tee logcat.log>/dev/null 2>&1 &
   # Unlock emulator
-  - adb shell input keyevent 82
+  - adb shell input keyevent 82 &
   # Screenshot for debugging
   #- adb shell screencap -p | perl -pe 's/\x0D\x0A/\x0A/g' > bootscreen.png
-  # TODO: upload
-  - ./gradlew connectedDebugAndroidTest --continue --stacktrace -PdisablePreDex
+  - travis_wait 30 ./gradlew connectedDebugAndroidTest --continue --stacktrace -PdisablePreDex
 
 after_failure:
   - cat /home/travis/build/liujoshua/ResearchStackSampleApp/app/build/reports/androidTests/connected/org.researchstack.sampleapp.OnboardingActivityTest.html
