@@ -36,14 +36,13 @@ public class OnboardingActivityTest {
     public void setup() {
         closeSoftKeyboard();
     }
+
     @Test
     public void testClickSignUp() {
         ViewInteraction introSignupButton = onView(withId(R.id.intro_sign_up));
-        try {
-            introSignupButton.perform(scrollTo());
-        } catch(PerformException e) {
-            Log.e(OnboardingActivityTest.class.getCanonicalName(), "Could not scroll to sign up botton");
-        }
+
+        introSignupButton.perform(scrollTo());
+        
         introSignupButton.perform(click());
 
         intended(hasComponent(new ComponentName("org.researchstack.skin", "org.researchstack.skin.ui.SignUpTaskActivity")));
