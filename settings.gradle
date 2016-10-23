@@ -1,1 +1,1 @@
-include ':app', ":bridge-android-sdk"
+include ':app'

@@ -48,12 +48,15 @@ android {
     dexOptions {
         javaMaxHeapSize '4g' //specify the heap size for the dex process
     }
+    lintOptions {
+        abortOnError false
+    }
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile 'org.sagebionetworks.bridge:researchstack-sdk:0.0.5'
+    compile 'org.researchstack:skin:1.0.0.rc3', {
+        exclude group: 'joda-time', module: 'joda-time'
+    }
     testCompile 'junit:junit:4.12'
-    compile 'org.researchstack:skin:1.0.0.rc3'
-    debugCompile project(path: ':bridge-android-sdk', configuration: 'debug') // 
-    releaseCompile project(":bridge-android-sdk")
 }
