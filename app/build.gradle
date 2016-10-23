@@ -55,7 +55,7 @@ android {
 
 dependencies {
     compile 'org.sagebionetworks.bridge:researchstack-sdk:0.0.5'
-    compile 'org.researchstack:skin:1.0.0.rc3', {
+    compile 'org.researchstack:skin:1.1.1', {
         exclude group: 'joda-time', module: 'joda-time'
     }
     testCompile 'junit:junit:4.12'
