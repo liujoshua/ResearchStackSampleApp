@@ -24,7 +24,9 @@ buildscript {
 allprojects {
     repositories {
         jcenter()
+        // TODO: deploy to central repository so App builders won't need to add our repos
         maven { url "https://dl.bintray.com/sage-bionetworks/bridge-maven-release/" }
+        maven { url 'http://repo-maven.sagebridge.org/' }
         maven { url "https://jitpack.io" } // for MPAndroidChard, not on jcenter yet
         mavenLocal()        // for updates to local rstack
     }
